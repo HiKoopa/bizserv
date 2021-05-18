@@ -85,7 +85,7 @@ public class ConnectionActor extends AbstractActorWithStash implements NettyChan
 
     @Override
     public void disconnected(NettyChannel nettyChannel) {
-        self().tell(nettyChannel, ActorRef.noSender());
+        self().tell(new messageDisconnected(nettyChannel), ActorRef.noSender());
     }
 
     static class messageNewCall implements ResponseType<Void> {
@@ -129,8 +129,14 @@ public class ConnectionActor extends AbstractActorWithStash implements NettyChan
         public Receive createReceive() {
             return receiveBuilder()
                     .match(LoginResp.class, this::onLoginResp)
+                    .match(messageDisconnected.class, this::onMessageDisconnected)
                     .matchAny(r -> stash())
                     .build();
+        }
+
+        //TODO Interval 필요
+        private void onMessageDisconnected(messageDisconnected req) {
+            preStart();
         }
 
         private void onLoginResp(LoginResp loginResp) {
@@ -150,13 +156,23 @@ public class ConnectionActor extends AbstractActorWithStash implements NettyChan
         public Receive createReceive() {
             return receiveBuilder()
                     .match(messageNewCall.class, this::onMessageNewCall)
-                    .matchAny(r -> log.info("unexpected message : {} " , r))
+                    .match(messageDisconnected.class, this::onMessageDisconnected)
+                    .matchAny(r -> log.info("AT Normal State unexpected message : {} " , r))
                     .build();
+        }
+
+        private void onMessageDisconnected(messageDisconnected req) {
+            preStart();
         }
 
         private void onMessageNewCall(messageNewCall req) {
             var f = channel.sendMessage(new NewCall(req.CallID, req.CalledNum));
             req.sendFutureResponse(sender(), f, ActorRef.noSender());
+        }
+    }
+
+    private static class messageDisconnected {
+        public messageDisconnected(NettyChannel nettyChannel) {
         }
     }
 }

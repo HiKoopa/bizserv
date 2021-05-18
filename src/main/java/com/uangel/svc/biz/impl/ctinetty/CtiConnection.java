@@ -26,27 +26,27 @@ public class CtiConnection implements CtiClient {
     }
 
     @Override
-    public CompletableFuture<Void> NewCall(String CallID, String CalledNum) {
+    public CompletableFuture<Void> NewCall(String CalledNum, String CallID) {
         return ResponseType.askFor(actorRef, new ConnectionActor.messageNewCall(CallID, CalledNum), Duration.ofSeconds(10));
     }
 
     @Override
-    public CompletableFuture<Void> CallInfoReq(String CallID) {
+    public CompletableFuture<Void> CallInfoReq(String CalledNum, String CallID) {
         return null;
     }
 
     @Override
-    public CompletableFuture<Void> UDataSet(String CallID, UDataSet uDataSet) {
+    public CompletableFuture<Void> UDataSet(String CalledNum, String CallID, UDataSet uDataSet) {
         return null;
     }
 
     @Override
-    public CompletableFuture<Void> UDataGet(String CallID, String keys, String requestID) {
+    public CompletableFuture<Void> UDataGet(String CalledNum, String CallID, String keys, String requestID) {
         return null;
     }
 
     @Override
-    public CompletableFuture<Void> EndCall(String CallID, String endCause) {
+    public CompletableFuture<Void> EndCall(String CalledNum, String CallID, String endCause) {
         return null;
     }
 

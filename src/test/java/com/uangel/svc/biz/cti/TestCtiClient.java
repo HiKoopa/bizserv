@@ -3,10 +3,10 @@ package com.uangel.svc.biz.cti;
 import akka.actor.ActorSystem;
 import com.uangel.svc.biz.impl.ctinetty.CtiConnection;
 import com.uangel.svc.biz.impl.ctinetty.CtiRequires;
+import com.uangel.svc.biz.impl.ctinetty.CtiRouter;
 import com.uangel.svc.biz.impl.ctisim.CtiServerFactory;
 import com.uangel.svc.biz.impl.ctisim.ServiceLogic;
 import com.uangel.svc.biz.modules.ActorSystemModule;
-import com.uangel.svc.biz.modules.NettyCtiClientModule;
 import io.netty.channel.Channel;
 import io.netty.channel.nio.NioEventLoopGroup;
 import org.junit.Test;
@@ -31,7 +31,6 @@ public class TestCtiClient {
     @Autowired
     ActorSystem actorSystem;
 
-
     @Test
     public void Test() throws ExecutionException, InterruptedException, TimeoutException {
 
@@ -55,7 +54,7 @@ public class TestCtiClient {
                 var client = new CtiConnection(new CtiRequires(actorSystem), group, "127.0.0.1", 7009, "NUGUIVR");
 
 
-                var res = client.NewCall("hello", "10005");
+                var res = client.NewCall("10005", "hello");
 
                 loginReqPromise.get(4, TimeUnit.SECONDS);
                 newCallPromise.get(4, TimeUnit.SECONDS);
@@ -66,5 +65,57 @@ public class TestCtiClient {
                 group.shutdownGracefully();
             }
         }
+    }
+
+    @Test
+    public void Test1() throws ExecutionException, InterruptedException, TimeoutException {
+        var loginReqPromise = new CompletableFuture<Boolean>();
+        var newCallPromise = new CompletableFuture<Boolean>();
+
+        var loginReqPromise2 = new CompletableFuture<Boolean>();
+        var newCallPromise2 = new CompletableFuture<Boolean>();
+
+        try(var sf = new CtiServerFactory()) {
+            sf.newServer(7009, new ServiceLogic() {
+                @Override
+                public void onLoginReq(Channel channel, LoginReq req) {
+                    loginReqPromise.complete(true);
+                    channel.writeAndFlush(new LoginResp(req.getCallID(), Optional.of("IVR Server:8.1.000.05"), "Success", "OK"));
+                }
+                @Override
+                public void onNewCall(Channel channel, NewCall newcall) {
+                    newCallPromise.complete(true);
+                }
+            });
+
+            sf.newServer(7010, new ServiceLogic() {
+                @Override
+                public void onLoginReq(Channel channel, LoginReq req) {
+                    loginReqPromise2.complete(true);
+                    channel.writeAndFlush(new LoginResp(req.getCallID(), Optional.of("IVR Server:8.1.000.05"), "Success", "OK"));
+                }
+                @Override
+                public void onNewCall(Channel channel, NewCall newcall) {
+                    newCallPromise2.complete(true);
+                }
+            });
+            var group = new NioEventLoopGroup();
+            try {
+                var client = new CtiRouter(new CtiRequires(actorSystem));
+                var res = client.NewCall("10005", "hello");
+
+                loginReqPromise.get(4, TimeUnit.SECONDS);
+                newCallPromise.get(4, TimeUnit.SECONDS);
+
+                loginReqPromise2.get(4, TimeUnit.SECONDS);
+                newCallPromise2.get(4, TimeUnit.SECONDS);
+
+                res.get(4 , TimeUnit.SECONDS);
+
+            } finally {
+                group.shutdownGracefully();
+            }
+        }
+
     }
 }
