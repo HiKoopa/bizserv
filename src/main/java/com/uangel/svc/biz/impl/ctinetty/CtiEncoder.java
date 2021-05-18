@@ -6,10 +6,12 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
 import io.netty.util.concurrent.EventExecutorGroup;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class CtiEncoder extends MessageToByteEncoder<CtiMessage> {
     @Override
-    protected void encode(ChannelHandlerContext channelHandlerContext, CtiMessage ctiMessage, ByteBuf byteBuf) throws Exception {
+    protected void encode(ChannelHandlerContext channelHandlerContext, CtiMessage ctiMessage, ByteBuf byteBuf)  {
         var a = ctiMessage.toXML();
         if (a.isSuccess()) {
             //Header
@@ -21,6 +23,8 @@ public class CtiEncoder extends MessageToByteEncoder<CtiMessage> {
 
             //Body
             byteBuf.writeBytes(a.get());
+
+            log.info("write message {}", new String(a.get()));
         }
     }
 }

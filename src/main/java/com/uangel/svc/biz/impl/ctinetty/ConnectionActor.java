@@ -10,7 +10,9 @@ import com.uangel.svc.biz.cti.LoginReq;
 import com.uangel.svc.biz.cti.LoginResp;
 import com.uangel.svc.biz.cti.NewCall;
 import io.netty.channel.EventLoopGroup;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class ConnectionActor extends AbstractActorWithStash implements NettyChannelStatusListener, CtiMessageHandler {
 
     private CtiRequires ctiRequires;
@@ -29,6 +31,7 @@ public class ConnectionActor extends AbstractActorWithStash implements NettyChan
         this.clientName = clientName;
     }
 
+    @SuppressWarnings("CodeBlock2Expr")
     public static Props props(CtiRequires ctiRequires, EventLoopGroup loopGroup, String ipAddress, int port, String clientName) {
         return Props.create(ConnectionActor.class, () -> {
             return new ConnectionActor(ctiRequires, loopGroup, ipAddress, port, clientName);
@@ -41,6 +44,11 @@ public class ConnectionActor extends AbstractActorWithStash implements NettyChan
     }
 
     class initialState {
+        public initialState() {
+            log.info("actor {} become initialState", self());
+        }
+
+        @SuppressWarnings("CodeBlock2Expr")
         public Receive createReceive() {
             return receiveBuilder()
                     .match(NettyChannel.class, this::onConnected)
@@ -66,7 +74,7 @@ public class ConnectionActor extends AbstractActorWithStash implements NettyChan
     @Override
     public Receive createReceive() {
         return receiveBuilder()
-                .matchAny(r -> System.out.println("unexpected message : " + r))
+                .matchAny(r -> log.info("unexpected message : {} " , r))
                 .build();
     }
 
@@ -99,7 +107,8 @@ public class ConnectionActor extends AbstractActorWithStash implements NettyChan
     }
 
     @Override
-    public void preStart() throws Exception {
+    public void preStart() {
+        getContext().become(new initialState().createReceive());
         var f = NettyChannel.newConnection(loopGroup, this, this, ipAddress, port);
         f.whenComplete((nettyChannel, throwable) -> {
             if (throwable != null) {
@@ -110,6 +119,12 @@ public class ConnectionActor extends AbstractActorWithStash implements NettyChan
 
     private class WaitingLoginResp {
         //TODO 생성자에서 타이머 Start하고, 만료되면 다시로그인? 새로접속?
+
+
+        public WaitingLoginResp() {
+            log.info("actor {} become WaitingLoginResp", self());
+
+        }
 
         public Receive createReceive() {
             return receiveBuilder()
@@ -128,12 +143,14 @@ public class ConnectionActor extends AbstractActorWithStash implements NettyChan
 
         public NormalState() {
             unstashAll();
+            log.info("actor {} become NormalState", self());
+
         }
 
         public Receive createReceive() {
             return receiveBuilder()
                     .match(messageNewCall.class, this::onMessageNewCall)
-                    .matchAny(r -> System.out.println("unexpected message : " + r))
+                    .matchAny(r -> log.info("unexpected message : {} " , r))
                     .build();
         }
 
