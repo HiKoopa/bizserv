@@ -1,13 +1,11 @@
-package com.uangel.svc.biz.impl.ctinetty;
+package com.uangel.svc.biz.cti;
 
 import com.uangel.svc.biz.actorutil.Try;
-import com.uangel.svc.biz.cti.CtiMessage;
-import org.xml.sax.SAXException;
+import com.uangel.svc.biz.impl.ctinetty.CtiXmlHandler;
 
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import java.io.ByteArrayInputStream;
-import java.text.ParseException;
 
 public class CtiMessageParser {
     SAXParserFactory factory = SAXParserFactory.newInstance();

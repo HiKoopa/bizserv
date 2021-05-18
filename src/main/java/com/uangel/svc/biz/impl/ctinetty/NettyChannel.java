@@ -21,7 +21,7 @@ public class NettyChannel {
     }
 
     // 새로운 connection 을 만드는 함수
-    public static CompletableFuture<NettyChannel> newConnection(EventLoopGroup workerGroup, NettyChannelStatusListener client, String addr , int port) {
+    public static CompletableFuture<NettyChannel> newConnection(EventLoopGroup workerGroup, NettyChannelStatusListener client, CtiMessageHandler handler, String addr , int port) {
         NettyChannel connection = new NettyChannel(client);
         CompletableFuture<NettyChannel> ret = new CompletableFuture<>();
 
@@ -35,8 +35,8 @@ public class NettyChannel {
                 // inbound 는 위에서 아래로
                 // outbound 는 아래서 위로 진행됨
                 ch.pipeline().addLast(new CtiDecoder() );
-                //ch.pipeline().addLast(new CtEncoder());
-                ch.pipeline().addLast(new NettyChannelHandler(connection));
+                ch.pipeline().addLast(new CtiEncoder());
+                ch.pipeline().addLast(new NettyChannelHandler(connection, handler));
             }
         });
 
