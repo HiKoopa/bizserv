@@ -1,36 +1,42 @@
 package com.uangel.svc.biz.impl.ctinetty;
 
+import com.uangel.svc.biz.actorutil.Try;
+import com.uangel.svc.biz.cti.CtiMessage;
 import org.xml.sax.SAXException;
-import org.xml.sax.SAXNotRecognizedException;
-import org.xml.sax.SAXNotSupportedException;
 
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.util.Optional;
+import java.text.ParseException;
 
 public class CtiMessageParser {
     SAXParserFactory factory = SAXParserFactory.newInstance();
 
 
-    SAXParser parser;
+    Try<SAXParser> parser;
 
-    public CtiMessageParser() throws SAXException, ParserConfigurationException {
-        factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
-        factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
-        factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-        factory.setXIncludeAware(false);
+    public CtiMessageParser() {
+        parser = Try.from(() -> {
+            factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+            factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+            factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+            factory.setXIncludeAware(false);
 
-        parser = factory.newSAXParser();
+            return factory.newSAXParser();
+        });
     }
 
-    @SuppressWarnings("OptionalGetWithoutIsPresent")
-    public CtiMessage parse(byte[] b ) throws IOException, SAXException {
-        var bis = new ByteArrayInputStream(b);
-        var handler = new CtiXmlHandler();
-        parser.parse( bis , handler);
-        return handler.getParsed().get();
+    @SuppressWarnings("CodeBlock2Expr")
+    public Try<CtiMessage> parse(byte[] b )  {
+        return parser.flatMap(saxParser -> {
+            return Try.from(() -> {
+                var bis = new ByteArrayInputStream(b);
+                var handler = new CtiXmlHandler();
+                saxParser.parse( bis , handler);
+                return handler.getParsed();
+            }).flatMap((t) -> t).recoverWith(throwable -> {
+                return Try.Failure(new Exception( String.format("parse error. message = %s", new String(b)) , throwable));
+            });
+        });
     }
 }

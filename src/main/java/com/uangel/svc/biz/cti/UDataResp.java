@@ -2,7 +2,7 @@ package com.uangel.svc.biz.cti;
 
 import java.util.List;
 
-public class UDataResp {
+public class UDataResp implements CtiMessage{
     private String result;
 
     private String requestID;
@@ -24,5 +24,10 @@ public class UDataResp {
 
     public List<Node> getUDataEx() {
         return UDataEx;
+    }
+
+    @Override
+    public String messageType() {
+        return "UDataResp";
     }
 }

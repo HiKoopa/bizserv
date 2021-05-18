@@ -1,18 +1,20 @@
 package com.uangel.svc.biz.impl.ctinetty;
 
+import com.uangel.svc.biz.actorutil.Try;
+import com.uangel.svc.biz.cti.CtiMessage;
+import com.uangel.svc.biz.cti.LoginResp;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import javax.swing.text.Element;
-import java.util.ArrayList;
 import java.util.LinkedList;
-import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.function.Consumer;
 
 public class CtiXmlHandler extends DefaultHandler {
 
+    private static Throwable noMessage = new NoSuchElementException("");
     static class HandlerStack {
         ElementHandler handler;
         Runnable whenPop;
@@ -25,14 +27,16 @@ public class CtiXmlHandler extends DefaultHandler {
 
     LinkedList<HandlerStack> handler = new LinkedList<>();
 
-    Optional<CtiMessage> ret = Optional.empty();
+
+    Try<CtiMessage> ret = Try.Failure(noMessage);
+    @SuppressWarnings("CodeBlock2Expr")
     public CtiXmlHandler() {
         become(new RootParser(), rootParser -> {
             ret = rootParser.ret;
         });
     }
 
-    public Optional<CtiMessage> getParsed() {
+    public Try<CtiMessage> getParsed() {
         if (handler.size() > 0 ) {
             handler.removeFirst().whenPop.run();
         }
@@ -40,26 +44,24 @@ public class CtiXmlHandler extends DefaultHandler {
     }
 
     @Override
-    public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
+    public void startElement(String uri, String localName, String qName, Attributes attributes) {
         handler.getFirst().handler.startElement(uri, localName, qName, attributes);
     }
 
     @Override
-    public void endElement(String uri, String localName, String qName) throws SAXException {
+    public void endElement(String uri, String localName, String qName) {
         var h = handler.removeFirst();
         h.whenPop.run();
     }
 
     @Override
-    public void characters(char[] ch, int start, int length) throws SAXException {
+    public void characters(char[] ch, int start, int length) {
         handler.getFirst().handler.characters(ch,start,length);
     }
 
 
     private <T extends ElementHandler> void become(T h , Consumer<T> consumer) {
-        handler.addFirst(new HandlerStack( h, () -> {
-            consumer.accept(h);
-        }));
+        handler.addFirst(new HandlerStack( h, () -> consumer.accept(h)));
     }
 
     static class ElementHandler extends DefaultHandler {
@@ -83,11 +85,11 @@ public class CtiXmlHandler extends DefaultHandler {
 
         }
     }
-    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     private class RootParser extends ElementHandler {
 
-        Optional<CtiMessage> ret = Optional.empty();
+        Try<CtiMessage> ret = Try.Failure(noMessage);
 
+        @SuppressWarnings("CodeBlock2Expr")
         @Override
         public void elem(String qName, Attributes attributes)  {
             if (qName.equals("GctiMsg")) {
@@ -98,6 +100,7 @@ public class CtiXmlHandler extends DefaultHandler {
         }
     }
 
+    @SuppressWarnings({"OptionalUsedAsFieldOrParameterType", "CodeBlock2Expr"})
     private class GctiParser extends ElementHandler {
         Optional<String> callID = Optional.empty();
         Optional<LoginRespParser> loginResp = Optional.empty();
@@ -118,41 +121,51 @@ public class CtiXmlHandler extends DefaultHandler {
             }
         }
 
-        Optional<CtiMessage> parsedMessage() {
+        Try<CtiMessage> parsedMessage() {
             if (callID.isPresent()) {
                 if (loginResp.isPresent()) {
-                    return this.loginResp.map(loginRespParser -> {
-                        return new LoginResp(this.callID.get(), loginRespParser.IserverVer, loginRespParser.Result, loginRespParser.Status);
+                    return Try.fromOptional(loginResp).flatMap(loginRespParser -> {
+                        return Try.from(() -> {
+                            return new LoginResp(
+                                    this.callID.get(),
+                                    loginRespParser.IserverVer,
+                                    loginRespParser.Result.get(),
+                                    loginRespParser.Status.get()
+                            );
+                        });
                     });
                 }
             }
-            return Optional.empty();
+            return Try.Failure(new NoSuchElementException("no message element found"));
         }
     }
 
 
+    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     private class CallIdParser extends ElementHandler {
         Optional<String> callID = Optional.empty();
         @Override
         void text(String txt) {
-            this.callID = Optional.ofNullable(txt).map(s -> s.trim());
+            this.callID = Optional.ofNullable(txt).map(String::trim);
         }
     }
 
+    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     private class LoginRespParser extends ElementHandler {
-        Optional<String> IserverVer = Optional.empty();
-        Optional<String> Result = Optional.empty();
-        Optional<String> Status = Optional.empty();
+
+        Optional<String> IserverVer;
+        Try<String> Result;
+        Try<String> Status;
 
         LoginRespParser(String qName, Attributes attributes) {
             this.IserverVer = Optional.ofNullable(attributes.getValue("IServerVer"))
-                    .map(s -> s.trim());
+                    .map(String::trim);
 
-            this.Result = Optional.ofNullable(attributes.getValue("Result"))
-                    .map(s -> s.trim());
+            this.Result = Try.fromOptional(Optional.ofNullable(attributes.getValue("Result"))
+                    .map(String::trim));
 
-            this.Status = Optional.ofNullable(attributes.getValue("Status"))
-                    .map(s -> s.trim());
+            this.Status = Try.fromOptional(Optional.ofNullable(attributes.getValue("Status"))
+                    .map(String::trim));
         }
     }
 }

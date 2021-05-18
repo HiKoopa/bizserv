@@ -1,4 +1,4 @@
-package com.uangel.svc.biz.impl.ctinetty;
+package com.uangel.svc.biz.cti;
 
 public interface CtiMessage {
     String messageType();

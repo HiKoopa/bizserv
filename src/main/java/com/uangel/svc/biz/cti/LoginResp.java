@@ -1,15 +1,18 @@
-package com.uangel.svc.biz.impl.ctinetty;
+package com.uangel.svc.biz.cti;
+
+import com.uangel.svc.biz.cti.CtiMessage;
 
 import java.util.Optional;
 
+@SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 public class LoginResp implements CtiMessage {
 
-    private String callID;
-    private Optional<String> IServerVer;
-    private Optional<String> result;
-    private Optional<String> status;
+    private final String callID;
+    private final Optional<String> IServerVer;
+    private final String result;
+    private final String status;
 
-    public LoginResp(String callID, Optional<String> IServerVer, Optional<String> Result, Optional<String> Status) {
+    public LoginResp(String callID, Optional<String> IServerVer, String Result, String Status) {
         this.callID = callID;
         this.IServerVer = IServerVer;
         result = Result;
@@ -29,11 +32,11 @@ public class LoginResp implements CtiMessage {
         return IServerVer;
     }
 
-    public Optional<String> getResult() {
+    public String getResult() {
         return result;
     }
 
-    public Optional<String> getStatus() {
+    public String getStatus() {
         return status;
     }
 }

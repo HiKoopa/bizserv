@@ -1,6 +1,11 @@
 package com.uangel.svc.biz.cti;
 
-public class CallInfoResp {
+public class CallInfoResp implements CtiMessage {
+    @Override
+    public String messageType() {
+        return "CallInfoResp";
+    }
+
     private String ani;
     private String dnis;
     private String calledNum;
