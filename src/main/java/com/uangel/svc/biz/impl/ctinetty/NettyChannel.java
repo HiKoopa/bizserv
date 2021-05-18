@@ -1,5 +1,7 @@
 package com.uangel.svc.biz.impl.ctinetty;
 
+import com.uangel.svc.biz.cti.CtiMessage;
+import com.uangel.svc.biz.cti.NewCall;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -74,6 +76,17 @@ public class NettyChannel {
         this.channel.close();
     }
 
-    public void sendLogin() {
+    public CompletableFuture<Void> sendMessage(CtiMessage msg) {
+        CompletableFuture<Void> promise = new CompletableFuture<>();
+
+        channel.writeAndFlush(msg).addListener(future -> {
+            if (future.isSuccess()) {
+                promise.complete(null);
+            } else {
+                promise.completeExceptionally(future.cause());
+            }
+        });
+
+        return promise;
     }
 }

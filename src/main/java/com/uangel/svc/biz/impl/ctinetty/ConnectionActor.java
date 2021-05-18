@@ -6,7 +6,9 @@ import akka.actor.ActorRef;
 import akka.actor.Props;
 import com.uangel.svc.biz.actorutil.ResponseType;
 import com.uangel.svc.biz.cti.CtiMessage;
+import com.uangel.svc.biz.cti.LoginReq;
 import com.uangel.svc.biz.cti.LoginResp;
+import com.uangel.svc.biz.cti.NewCall;
 import io.netty.channel.EventLoopGroup;
 
 public class ConnectionActor extends AbstractActorWithStash implements NettyChannelStatusListener, CtiMessageHandler {
@@ -53,7 +55,7 @@ public class ConnectionActor extends AbstractActorWithStash implements NettyChan
         private void onConnected(NettyChannel nettyChannel) {
             //Send Login Request
             channel = nettyChannel;
-            nettyChannel.sendLogin();
+            nettyChannel.sendMessage(new LoginReq("callID123", clientName));
             getContext().become(new WaitingLoginResp().createReceive());
         }
 
@@ -136,7 +138,8 @@ public class ConnectionActor extends AbstractActorWithStash implements NettyChan
         }
 
         private void onMessageNewCall(messageNewCall req) {
-            //channel.sendMessage();
+            var f = channel.sendMessage(new NewCall(req.CallID, req.CalledNum));
+            req.sendFutureResponse(sender(), f, ActorRef.noSender());
         }
     }
 }
