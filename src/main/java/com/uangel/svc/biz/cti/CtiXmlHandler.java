@@ -1,4 +1,4 @@
-package com.uangel.svc.biz.impl.ctinetty;
+package com.uangel.svc.biz.cti;
 
 import com.uangel.svc.biz.actorutil.Try;
 import com.uangel.svc.biz.cti.CtiMessage;

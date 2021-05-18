@@ -1,7 +1,6 @@
 package com.uangel.svc.biz.cti;
 
 import com.uangel.svc.biz.actorutil.Try;
-import com.uangel.svc.biz.impl.ctinetty.CtiXmlHandler;
 
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;

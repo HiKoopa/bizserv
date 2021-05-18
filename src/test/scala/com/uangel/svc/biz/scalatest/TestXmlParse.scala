@@ -1,7 +1,6 @@
 package com.uangel.svc.biz.scalatest
 
-import com.uangel.svc.biz.cti.LoginResp
-import com.uangel.svc.biz.impl.ctinetty.{CtiMessageParser, CtiXmlHandler}
+import com.uangel.svc.biz.cti.{CtiMessageParser, LoginResp, NewCall}
 import org.scalatest.funsuite.AnyFunSuite
 import org.xml.sax.Attributes
 import org.xml.sax.helpers.DefaultHandler
@@ -50,6 +49,22 @@ class TestXmlParse extends AnyFunSuite {
     var loginResp = parsed.get().asInstanceOf[LoginResp]
     assert(loginResp.getCallID == "DEPVARS" )
     assert(loginResp.getStatus == "OK")
+
+    var marshalResult = loginResp.toXML
+    assert(marshalResult.isSuccess)
+
+    println(s"xml= ${new String(marshalResult.get())}")
+
+    var parsed2 = parser.parse( marshalResult.get())
+    var loginResp2 = parsed2.get().asInstanceOf[LoginResp]
+
+    assert(parsed.get().messageType() == parsed2.get().messageType())
+    assert(loginResp.getStatus == loginResp2.getStatus)
+    assert(loginResp.getCallID == loginResp2.getCallID)
+
+
+
+
 
   }
 
@@ -109,5 +124,12 @@ class TestXmlParse extends AnyFunSuite {
 
     parsed.failed().get().printStackTrace()
 
+  }
+
+  test("marshal new call") {
+    var nc = new NewCall("hello", "world")
+    var result = nc.toXML.map(new String(_))
+    assert(result.isSuccess)
+    assert(result.get() == """<?xml version="1.0" encoding="ISO-8859-1"?><!DOCTYPE GctiMsg SYSTEM 'IServer.dtd'><GctiMsg><CallId>hello</CallId><NewCall CallControlMode="Network" Version="4.0"><CalledNum>world</CalledNum></NewCall></GctiMsg>""")
   }
 }

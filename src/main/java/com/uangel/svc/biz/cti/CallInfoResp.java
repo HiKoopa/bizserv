@@ -87,4 +87,9 @@ public class CallInfoResp implements CtiMessage {
     public void setLastEvent(String lastEvent) {
         this.lastEvent = lastEvent;
     }
+
+    @Override
+    public void MarshalXml(GctiMsgWriter writer) {
+
+    }
 }

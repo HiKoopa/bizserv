@@ -30,4 +30,9 @@ public class UDataSet implements CtiMessage{
     public String messageType() {
         return "UDataSet";
     }
+
+    @Override
+    public void MarshalXml(GctiMsgWriter writer) {
+
+    }
 }

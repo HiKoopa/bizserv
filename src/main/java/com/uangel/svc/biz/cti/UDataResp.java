@@ -30,4 +30,10 @@ public class UDataResp implements CtiMessage{
     public String messageType() {
         return "UDataResp";
     }
+
+    @Override
+    public void MarshalXml(GctiMsgWriter writer) {
+
+
+    }
 }
