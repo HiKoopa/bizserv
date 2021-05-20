@@ -5,12 +5,10 @@ import com.uangel.svc.biz.cti.CtiClient;
 import com.uangel.svc.biz.cti.UDataSet;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
-import scala.util.control.TailCalls;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 public class CtiRouter implements CtiClient, AutoCloseable {

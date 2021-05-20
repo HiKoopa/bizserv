@@ -1,18 +1,14 @@
-package com.uangel.svc.biz.cti;
+package com.uangel.svc.biz.impl.ctimessage;
 
 import com.uangel.svc.biz.actorutil.SupplierEx;
 import com.uangel.svc.biz.actorutil.Try;
-import com.uangel.svc.biz.cti.CtiMessage;
-import com.uangel.svc.biz.cti.LoginResp;
 import org.xml.sax.Attributes;
-import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import java.util.LinkedList;
-import java.util.NoSuchElementException;
-import java.util.Optional;
+import java.util.*;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
+import java.util.function.Function;
 
 public class CtiXmlHandler extends DefaultHandler {
 
@@ -63,10 +59,23 @@ public class CtiXmlHandler extends DefaultHandler {
 
 
     private <T extends ElementHandler<?>> void become(T h , Consumer<T> consumer) {
+        h.setHandler(handler);
         handler.addFirst(new HandlerStack( h, () -> consumer.accept(h)));
     }
 
     static abstract class ElementHandler<T> extends DefaultHandler {
+
+
+        private LinkedList<HandlerStack> handler;
+
+        void setHandler(LinkedList<HandlerStack> handler) {
+            this.handler = handler;
+        }
+
+        <U extends ElementHandler<?>> void become(U h , Consumer<U> consumer) {
+            h.setHandler(handler);
+            handler.addFirst(new HandlerStack( h, () -> consumer.accept(h)));
+        }
 
         Try<T> res = Try.Failure(noMessage);
 
@@ -100,6 +109,24 @@ public class CtiXmlHandler extends DefaultHandler {
 
         }
     }
+
+    static class MessageElementHandler extends ElementHandler<PartialMessage> {
+        void partialMessage( PartialMessage m ) {
+            result(m);
+        }
+    }
+
+    @SuppressWarnings("CodeBlock2Expr")
+    private static class CallStatusParser extends MessageElementHandler {
+        public CallStatusParser(String qName, Attributes attributes) {
+            partialMessage(callID -> {
+                return Try.fromOptional(Optional.ofNullable(attributes.getValue("Event"))).map(e -> {
+                    return new CallStatus(callID, e);
+                });
+            });
+        }
+    }
+
     private class RootParser extends ElementHandler<CtiMessage> {
 
         Try<CtiMessage> ret = Try.Failure(noMessage);
@@ -120,36 +147,40 @@ public class CtiXmlHandler extends DefaultHandler {
         }
     }
 
+    interface PartialMessage {
+        Try<CtiMessage> withCallID( String callID );
+
+    }
+
+    static Map<String, BiFunction< String, Attributes, MessageElementHandler>> messageParser = new HashMap<>();
+
+    static {
+        messageParser.put("LoginResp", LoginRespParser::new);
+
+        messageParser.put("LoginReq", LoginReqParser::new);
+
+        messageParser.put("CallStatus", CallStatusParser::new);
+
+    }
+
     @SuppressWarnings({"OptionalUsedAsFieldOrParameterType", "CodeBlock2Expr"})
     private class GctiParser extends ElementHandler<CtiMessage> {
         Optional<String> callID = Optional.empty();
-        Optional<LoginResp> loginResp = Optional.empty();
-        Optional<String> loginReq = Optional.empty();
-        Optional<NewCall> newCall = Optional.empty();
+        Try<PartialMessage> partialMessage = Try.Failure(noMessage);
 
         @Override
         public void elem(String qName, Attributes attributes)  {
-            switch (qName) {
-                case "CallId":
-                    become(new CallIdParser(), callIdParser -> {
-                        callID = callIdParser.result().toOptional();
+            if ("CallId".equals(qName)) {
+                become(new CallIdParser(), callIdParser -> {
+                    callID = callIdParser.result().toOptional();
+                });
+            } else {
+                var parser = messageParser.get(qName);
+                if (parser != null) {
+                    become(parser.apply(qName, attributes), p -> {
+                        partialMessage = p.result();
                     });
-                    break;
-                case "LoginResp":
-                    become(new LoginRespParser(qName, attributes), loginRespParser -> {
-                        loginResp = loginRespParser.result().toOptional();
-                    });
-                    break;
-                case "LoginReq":
-                    become(new LoginReqParser(qName, attributes), loginReqParser -> {
-                        loginReq = loginReqParser.result().toOptional();
-                    });
-                    break;
-                case "NewCall":
-                    become(new NewCallParser(qName, attributes), newCallParser -> {
-                        newCall = newCallParser.result().toOptional();
-                    });
-                    break;
+                }
             }
         }
 
@@ -160,30 +191,13 @@ public class CtiXmlHandler extends DefaultHandler {
 
         Try<CtiMessage> parsedMessage() {
             if (callID.isPresent()) {
-                if (loginResp.isPresent()) {
-                    return Try.fromOptional(loginResp).map(v -> {
-                        return new LoginResp(callID.get(), v.getIServerVer(), v.getResult(), v.getStatus());
-                    });
-                }
-                if (loginReq.isPresent()) {
-                    return Try.fromOptional(loginReq).map(v -> {
-                            return new LoginReq(
-                                    this.callID.get(),
-                                    v);
-                    });
-                }
-                if (newCall.isPresent()) {
-                    return Try.fromOptional(newCall).map(v -> {
-                        return new NewCall(
-                                this.callID.get(),
-                                v.getCalledNum());
-                    });
-                }
+                return partialMessage.flatMap(p -> {
+                    return p.withCallID(callID.get());
+                });
             }
             return Try.Failure(new NoSuchElementException("no message element found"));
         }
     }
-
 
     @SuppressWarnings("CodeBlock2Expr")
     private class CallIdParser extends ElementHandler<String> {
@@ -196,37 +210,32 @@ public class CtiXmlHandler extends DefaultHandler {
         }
     }
 
-    private class LoginRespParser extends ElementHandler<LoginResp> {
-
-
+    static private class LoginRespParser extends MessageElementHandler {
 
         LoginRespParser(String qName, Attributes attributes) {
-            supply(() -> {
-                var IserverVer = Optional.ofNullable(attributes.getValue("IServerVer"))
-                        .map(String::trim);
+            var IserverVer = Optional.ofNullable(attributes.getValue("IServerVer"))
+                    .map(String::trim);
 
-                var Result = Try.fromOptional(Optional.ofNullable(attributes.getValue("Result"))
-                        .map(String::trim));
+            var Result = Try.fromOptional(Optional.ofNullable(attributes.getValue("Result"))
+                    .map(String::trim));
 
-                var Status = Try.fromOptional(Optional.ofNullable(attributes.getValue("Status"))
-                        .map(String::trim));
+            var Status = Try.fromOptional(Optional.ofNullable(attributes.getValue("Status"))
+                    .map(String::trim));
 
-                return new LoginResp( "", IserverVer, Result.get() , Status.get() );
-            });
+            partialMessage(callID -> Try.from(() -> new LoginResp( callID, IserverVer, Result.get() , Status.get() )));
         }
     }
 
-    private class LoginReqParser extends ElementHandler<String> {
+    static private class LoginReqParser extends MessageElementHandler {
         @SuppressWarnings("OptionalGetWithoutIsPresent")
         public LoginReqParser(String qName, Attributes attributes) {
-            supply(() -> {
-                var clientName = Optional.ofNullable(attributes.getValue("ClientName"));
-                return clientName.get();
-            });
+            var clientName = Optional.ofNullable(attributes.getValue("ClientName"));
+
+            partialMessage(callID -> Try.from(() -> new LoginReq( callID, clientName.get())));
         }
     }
 
-    private class NewCallParser extends ElementHandler<NewCall> {
+    static private class NewCallParser extends MessageElementHandler {
         public NewCallParser(String qName, Attributes attributes) {
         }
 
@@ -235,13 +244,15 @@ public class CtiXmlHandler extends DefaultHandler {
         void elem(String qName, Attributes attributes) {
             if ("CalledNum".equals(qName)) {
                 become(new CalledNumParser(), elementHandler -> {
-                    supply(() -> new NewCall("", elementHandler.result().get()));
+                    partialMessage(callID -> elementHandler.result().map(called -> {
+                        return new NewCall(callID, called);
+                    }));
                 });
             }
         }
     }
 
-    private class CalledNumParser extends ElementHandler<String>{
+    static private class CalledNumParser extends ElementHandler<String>{
         @Override
         void text(String txt) {
             result(txt.trim());

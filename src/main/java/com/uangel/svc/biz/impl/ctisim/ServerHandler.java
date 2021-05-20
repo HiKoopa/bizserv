@@ -1,16 +1,12 @@
 package com.uangel.svc.biz.impl.ctisim;
 
-import com.uangel.svc.biz.cti.CtiMessage;
-import com.uangel.svc.biz.cti.LoginReq;
-import com.uangel.svc.biz.cti.NewCall;
+import com.uangel.svc.biz.impl.ctimessage.CtiMessage;
+import com.uangel.svc.biz.impl.ctimessage.LoginReq;
+import com.uangel.svc.biz.impl.ctimessage.NewCall;
 import io.netty.channel.ChannelDuplexHandler;
-import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
-import io.netty.util.concurrent.EventExecutorGroup;
 import lombok.extern.slf4j.Slf4j;
-
-import java.util.function.Consumer;
 
 @Slf4j
 public class ServerHandler extends ChannelDuplexHandler {

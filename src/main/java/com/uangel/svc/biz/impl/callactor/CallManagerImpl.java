@@ -9,7 +9,6 @@ import com.uangel.svc.biz.call.InboundCallResp;
 import com.uangel.svc.biz.call.TransactionID;
 import com.uangel.svc.biz.cti.CallInfoResp;
 import com.uangel.svc.biz.cti.CallStatusListener;
-import com.uangel.svc.biz.cti.CtiClient;
 import com.uangel.svc.biz.cti.UDataResp;
 
 import javax.inject.Inject;

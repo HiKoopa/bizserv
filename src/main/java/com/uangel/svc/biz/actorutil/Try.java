@@ -3,6 +3,7 @@ package com.uangel.svc.biz.actorutil;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -13,6 +14,22 @@ public abstract class Try<T> {
     }
 
     public abstract <U> Try<U> map(Function<T,U> mapf);
+
+    public <U> Try<U> mapEx(FunctionEx<T,U> mapf) {
+        try {
+            return map(mapf::apply);
+        } catch (Throwable e) {
+            return Failure(e);
+        }
+    }
+
+    public void foreach(Consumer<T> consumer) {
+       map((t) -> {
+           consumer.accept(t);
+           return null;
+       });
+    }
+
     public abstract <U> Try<U> flatMap(Function<T,Try<U>> mapf);
     public abstract  Try<T> recoverWith( Function<Throwable,Try<T>> recoverFunc);
 

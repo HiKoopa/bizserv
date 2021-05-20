@@ -2,7 +2,7 @@ package com.uangel.svc.biz.cti;
 
 import java.util.List;
 
-public class UDataResp implements CtiMessage{
+public class UDataResp {
     private String result;
 
     private String requestID;
@@ -26,14 +26,5 @@ public class UDataResp implements CtiMessage{
         return UDataEx;
     }
 
-    @Override
-    public String messageType() {
-        return "UDataResp";
-    }
 
-    @Override
-    public void MarshalXml(GctiMsgWriter writer) {
-
-
-    }
 }

@@ -1,4 +1,4 @@
-package com.uangel.svc.biz.cti;
+package com.uangel.svc.biz.impl.ctimessage;
 
 import com.uangel.svc.biz.actorutil.Try;
 
@@ -32,6 +32,7 @@ public class CtiMessageParser {
                 saxParser.parse( bis , handler);
                 return handler.getParsed();
             }).flatMap((t) -> t).recoverWith(throwable -> {
+                throwable.printStackTrace();
                 return Try.Failure(new Exception( String.format("parse error. message = %s", new String(b)) , throwable));
             });
         });

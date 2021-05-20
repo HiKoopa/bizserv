@@ -1,7 +1,6 @@
 package com.uangel.svc.biz.impl.ctinetty;
 
-import com.uangel.svc.biz.cti.CtiMessage;
-import com.uangel.svc.biz.cti.NewCall;
+import com.uangel.svc.biz.impl.ctimessage.CtiMessage;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -32,7 +31,7 @@ public class NettyChannel {
         b.channel(NioSocketChannel.class);
 
         b.handler(new ChannelInitializer<SocketChannel>() {
-            protected void initChannel(SocketChannel ch) throws Exception {
+            protected void initChannel(SocketChannel ch) {
                 // connect 된 channel 의 pipeline 구성
                 // inbound 는 위에서 아래로
                 // outbound 는 아래서 위로 진행됨

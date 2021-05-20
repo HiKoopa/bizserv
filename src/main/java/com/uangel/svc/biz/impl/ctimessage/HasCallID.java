@@ -1,6 +1,4 @@
-package com.uangel.svc.biz.cti;
-
-import javax.sql.rowset.spi.XmlWriter;
+package com.uangel.svc.biz.impl.ctimessage;
 
 public abstract class HasCallID implements CtiMessage {
 

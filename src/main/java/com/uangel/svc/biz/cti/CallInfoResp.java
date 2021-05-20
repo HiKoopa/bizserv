@@ -1,10 +1,6 @@
 package com.uangel.svc.biz.cti;
 
-public class CallInfoResp implements CtiMessage {
-    @Override
-    public String messageType() {
-        return "CallInfoResp";
-    }
+public class CallInfoResp  {
 
     private String ani;
     private String dnis;
@@ -88,8 +84,5 @@ public class CallInfoResp implements CtiMessage {
         this.lastEvent = lastEvent;
     }
 
-    @Override
-    public void MarshalXml(GctiMsgWriter writer) {
 
-    }
 }

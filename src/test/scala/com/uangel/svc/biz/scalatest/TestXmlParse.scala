@@ -1,6 +1,6 @@
 package com.uangel.svc.biz.scalatest
 
-import com.uangel.svc.biz.cti.{CtiMessageParser, LoginResp, NewCall}
+import com.uangel.svc.biz.impl.ctimessage.{CallStatus, CtiMessageParser, LoginResp, NewCall}
 import org.scalatest.funsuite.AnyFunSuite
 import org.xml.sax.Attributes
 import org.xml.sax.helpers.DefaultHandler
@@ -131,5 +131,30 @@ class TestXmlParse extends AnyFunSuite {
     var result = nc.toXML.map(new String(_))
     assert(result.isSuccess)
     assert(result.get() == """<?xml version="1.0" encoding="ISO-8859-1"?><!DOCTYPE GctiMsg SYSTEM 'IServer.dtd'><GctiMsg><CallId>hello</CallId><NewCall CallControlMode="Network" Version="4.0"><CalledNum>world</CalledNum></NewCall></GctiMsg>""")
+
+    var parser = new CtiMessageParser()
+
+    var parsed = parser.parse( result.get().getBytes())
+    assert(parsed.isSuccess)
+    assert(parsed.get().messageType() == "NewCall")
+    var newcall = parsed.get().asInstanceOf[NewCall]
+    assert(newcall.getCalledNum == nc.getCalledNum)
+    assert(newcall.getCallID == nc.getCallID)
+  }
+
+  test("marshal call status") {
+    var nc = new CallStatus("hello", "Ringing")
+    var result = nc.toXML.map(new String(_))
+    assert(result.isSuccess)
+    assert(result.get() == """<?xml version="1.0" encoding="ISO-8859-1"?><!DOCTYPE GctiMsg SYSTEM 'IServer.dtd'><GctiMsg><CallId>hello</CallId><CallStatus Event="Ringing"></CallStatus></GctiMsg>""")
+
+    var parser = new CtiMessageParser()
+
+    var parsed = parser.parse( result.get().getBytes())
+    assert(parsed.isSuccess)
+    assert(parsed.get().messageType() == nc.messageType())
+    var newcall = parsed.get().asInstanceOf[CallStatus]
+    assert(newcall.getEvent == nc.getEvent)
+    assert(newcall.getCallID == nc.getCallID)
   }
 }

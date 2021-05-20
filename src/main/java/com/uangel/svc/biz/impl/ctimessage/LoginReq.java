@@ -1,4 +1,4 @@
-package com.uangel.svc.biz.cti;
+package com.uangel.svc.biz.impl.ctimessage;
 
 public class LoginReq extends HasCallID {
 
@@ -14,7 +14,6 @@ public class LoginReq extends HasCallID {
         return "LoginReq";
     }
 
-    @SuppressWarnings("CodeBlock2Expr")
     @Override
     public void MarshalXml(GctiMsgWriter writer) {
         this.writeCallID(writer);

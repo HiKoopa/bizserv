@@ -1,4 +1,4 @@
-package com.uangel.svc.biz.cti;
+package com.uangel.svc.biz.impl.ctimessage;
 
 import com.uangel.svc.biz.actorutil.Try;
 

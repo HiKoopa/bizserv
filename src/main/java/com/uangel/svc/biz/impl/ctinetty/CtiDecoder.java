@@ -1,6 +1,6 @@
 package com.uangel.svc.biz.impl.ctinetty;
 
-import com.uangel.svc.biz.cti.CtiMessageParser;
+import com.uangel.svc.biz.impl.ctimessage.CtiMessageParser;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
@@ -10,7 +10,7 @@ import java.util.List;
 public class CtiDecoder extends ByteToMessageDecoder {
     CtiMessageParser parser = new CtiMessageParser();
     @Override
-    protected void decode(ChannelHandlerContext ctx, ByteBuf byteBuf, List<Object> list) throws Exception {
+    protected void decode(ChannelHandlerContext ctx, ByteBuf byteBuf, List<Object> list)  {
 
         // 충분한 크기만큼 read 되지 않았을 때,  원래대로 돌리기 위해 index 저장
         var index = byteBuf.readerIndex();
@@ -34,27 +34,31 @@ public class CtiDecoder extends ByteToMessageDecoder {
                     b = new byte[length-2];
                     byteBuf.readBytes(b);
                 }
-                switch (GLIMsgType.valueOf(msgType).get()) {
-                    case GLI_MSG_TYPE_KEEP_ALIVE_REQ:
-                    case GLI_MSG_TYPE_KEEP_ALIVE_ACK:
-                    case GLI_MSG_TYPE_ERROR_ACK:
-                        //list.add();
-                        break;
-                    case GLI_MSG_TYPE_XML_DATA:
-                        //SAX Parser
-                        if (b != null) {
-                            var parsed = parser.parse(b);
-                            if (parsed.isSuccess()) {
-                                list.add(parsed.get());
+                var messageEnum = GLIMsgType.valueOf(msgType);
+
+                if (messageEnum.isPresent()) {
+                    switch (messageEnum.get()) {
+                        case GLI_MSG_TYPE_KEEP_ALIVE_REQ:
+                        case GLI_MSG_TYPE_KEEP_ALIVE_ACK:
+                        case GLI_MSG_TYPE_ERROR_ACK:
+                            //list.add();
+                            break;
+                        case GLI_MSG_TYPE_XML_DATA:
+                            //SAX Parser
+                            if (b != null) {
+                                var parsed = parser.parse(b);
+                                if (parsed.isSuccess()) {
+                                    list.add(parsed.get());
+                                } else {
+                                    ctx.fireExceptionCaught(parsed.failed().get());
+                                }
                             } else {
-                                ctx.fireExceptionCaught(parsed.failed().get());
+                                ctx.fireExceptionCaught(new Exception());
                             }
-                        } else {
-                            ctx.fireExceptionCaught(new Exception());
-                        }
-                        break;
-                    default:
-                        break;
+                            break;
+                        default:
+                            break;
+                    }
                 }
                 return;
             }

@@ -1,14 +1,13 @@
 package com.uangel.svc.biz.impl.ctinetty;
 
-import akka.actor.AbstractActor;
 import akka.actor.AbstractActorWithStash;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import com.uangel.svc.biz.actorutil.ResponseType;
-import com.uangel.svc.biz.cti.CtiMessage;
-import com.uangel.svc.biz.cti.LoginReq;
-import com.uangel.svc.biz.cti.LoginResp;
-import com.uangel.svc.biz.cti.NewCall;
+import com.uangel.svc.biz.impl.ctimessage.CtiMessage;
+import com.uangel.svc.biz.impl.ctimessage.LoginReq;
+import com.uangel.svc.biz.impl.ctimessage.LoginResp;
+import com.uangel.svc.biz.impl.ctimessage.NewCall;
 import io.netty.channel.EventLoopGroup;
 import lombok.extern.slf4j.Slf4j;
 
