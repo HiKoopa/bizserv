@@ -1,5 +1,10 @@
 package com.uangel.svc.biz.impl.ctimessage;
 
+import com.uangel.svc.biz.actorutil.Try;
+import org.xml.sax.Attributes;
+
+import java.util.Optional;
+
 public class CallStatus extends HasCallID{
 
     String event;
@@ -24,5 +29,19 @@ public class CallStatus extends HasCallID{
         writer.writeElement(messageType(), gctiMsgWriter -> {
             gctiMsgWriter.writeAttribute("Event", event);
         });
+    }
+
+    @SuppressWarnings("CodeBlock2Expr")
+    static public MessageUnmarshaller Unmarshaller() {
+        return new MessageUnmarshaller() {
+            @Override
+            void attr(Attributes attr) {
+                parseCallID(callID -> {
+                    return Try.fromOptional(Optional.ofNullable(attr.getValue("Event"))).map(e -> {
+                        return new CallStatus(callID, e);
+                    });
+                });
+            }
+        };
     }
 }

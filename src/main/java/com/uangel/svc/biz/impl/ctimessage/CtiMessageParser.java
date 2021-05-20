@@ -28,9 +28,16 @@ public class CtiMessageParser {
         return parser.flatMap(saxParser -> {
             return Try.from(() -> {
                 var bis = new ByteArrayInputStream(b);
-                var handler = new CtiXmlHandler();
-                saxParser.parse( bis , handler);
-                return handler.getParsed();
+
+                var stack = new UnmarshallerStack();
+
+                var handler = new CtiMessageUnmarshaller(stack);
+
+
+                saxParser.parse( bis , stack);
+
+
+                return handler.result();
             }).flatMap((t) -> t).recoverWith(throwable -> {
                 throwable.printStackTrace();
                 return Try.Failure(new Exception( String.format("parse error. message = %s", new String(b)) , throwable));

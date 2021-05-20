@@ -1,5 +1,8 @@
 package com.uangel.svc.biz.impl.ctimessage;
 
+import com.uangel.svc.biz.actorutil.Try;
+import org.xml.sax.Attributes;
+
 import java.util.Optional;
 
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
@@ -22,7 +25,6 @@ public class LoginResp extends HasCallID {
     }
 
 
-
     public Optional<String> getIServerVer() {
         return IServerVer;
     }
@@ -35,7 +37,7 @@ public class LoginResp extends HasCallID {
         return status;
     }
 
-    public void MarshalXml( GctiMsgWriter writer ) {
+    public void MarshalXml(GctiMsgWriter writer) {
 
         this.writeCallID(writer);
 
@@ -44,5 +46,23 @@ public class LoginResp extends HasCallID {
             xmlWriter1.writeAttribute("Result", getResult());
             xmlWriter1.writeAttribute("Status", getStatus());
         });
+    }
+
+    static public MessageUnmarshaller Unmarshaller() {
+        return new MessageUnmarshaller() {
+            @Override
+            void attr(Attributes attr) {
+                var IserverVer = Optional.ofNullable(attr.getValue("IServerVer"))
+                    .map(String::trim);
+
+            var Result = Try.fromOptional(Optional.ofNullable(attr.getValue("Result"))
+                    .map(String::trim));
+
+            var Status = Try.fromOptional(Optional.ofNullable(attr.getValue("Status"))
+                    .map(String::trim));
+
+            parseCallID(callID -> Try.from(() -> new LoginResp( callID, IserverVer, Result.get() , Status.get() )));
+            }
+        };
     }
 }

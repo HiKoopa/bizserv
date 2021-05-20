@@ -1,5 +1,10 @@
 package com.uangel.svc.biz.impl.ctimessage;
 
+import com.uangel.svc.biz.actorutil.Try;
+import org.xml.sax.Attributes;
+
+import java.util.Optional;
+
 public class NewCall extends HasCallID {
 
     String calledNum;
@@ -30,5 +35,29 @@ public class NewCall extends HasCallID {
 
     public String getCalledNum() {
         return calledNum;
+    }
+
+    static public Unmarshaller<String> CalledNumParser() {
+        return new Unmarshaller<>() {
+            void text(String txt) {
+                success(txt.trim());
+            }
+        };
+    }
+
+    @SuppressWarnings("CodeBlock2Expr")
+    static public MessageUnmarshaller Unmarshaller() {
+        return new MessageUnmarshaller() {
+            @Override
+            void elem(String qName, Attributes attr) {
+                if ("CalledNum".equals(qName)) {
+                    become(CalledNumParser(), elementHandler -> {
+                        parseCallID(callID -> elementHandler.result().map(called -> {
+                            return new NewCall(callID, called);
+                        }));
+                    });
+                }
+            }
+        };
     }
 }
