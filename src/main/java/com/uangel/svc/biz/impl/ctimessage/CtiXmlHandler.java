@@ -160,6 +160,7 @@ public class CtiXmlHandler extends DefaultHandler {
         messageParser.put("LoginReq", LoginReqParser::new);
 
         messageParser.put("CallStatus", CallStatusParser::new);
+        messageParser.put("NewCall", NewCallParser::new);
 
     }
 
