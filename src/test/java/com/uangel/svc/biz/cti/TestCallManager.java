@@ -2,11 +2,10 @@ package com.uangel.svc.biz.cti;
 
 import com.uangel.svc.biz.call.CallManager;
 import com.uangel.svc.biz.call.InboundCall;
+import com.uangel.svc.biz.impl.ctimessage.CallStatus;
 import com.uangel.svc.biz.impl.ctimessage.LoginReq;
 import com.uangel.svc.biz.impl.ctimessage.LoginResp;
 import com.uangel.svc.biz.impl.ctimessage.NewCall;
-import com.uangel.svc.biz.impl.ctinetty.CtiConnection;
-import com.uangel.svc.biz.impl.ctinetty.CtiRequires;
 import com.uangel.svc.biz.impl.ctisim.CtiServerFactory;
 import com.uangel.svc.biz.impl.ctisim.ServiceLogic;
 import com.uangel.svc.biz.modules.ActorSystemModule;
@@ -49,6 +48,7 @@ public class TestCallManager {
                 }
                 @Override
                 public void onNewCall(Channel channel, NewCall newcall) {
+                    channel.writeAndFlush(new CallStatus(newcall.getCallID(), "Ringing"));
                     newCallPromise.complete(true);
                 }
             });

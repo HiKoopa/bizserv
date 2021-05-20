@@ -52,6 +52,6 @@ public class CtiConnection implements CtiClient {
 
     @Override
     public void AddHandler(CallStatusListener listener) {
-
+        actorRef.tell(listener, ActorRef.noSender());
     }
 }

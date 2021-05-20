@@ -4,12 +4,13 @@ import akka.actor.AbstractActorWithStash;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import com.uangel.svc.biz.actorutil.ResponseType;
-import com.uangel.svc.biz.impl.ctimessage.CtiMessage;
-import com.uangel.svc.biz.impl.ctimessage.LoginReq;
-import com.uangel.svc.biz.impl.ctimessage.LoginResp;
-import com.uangel.svc.biz.impl.ctimessage.NewCall;
+import com.uangel.svc.biz.cti.CallStatusListener;
+import com.uangel.svc.biz.impl.ctimessage.*;
 import io.netty.channel.EventLoopGroup;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Slf4j
 public class ConnectionActor extends AbstractActorWithStash implements NettyChannelStatusListener, CtiMessageHandler {
@@ -21,19 +22,24 @@ public class ConnectionActor extends AbstractActorWithStash implements NettyChan
     private String clientName;
 
     private NettyChannel channel;
+    private List<CallStatusListener> callStatusListeners;
 
-    public ConnectionActor(CtiRequires ctiRequires, EventLoopGroup loopGroup, String ipAddress, int port, String clientName) {
+    public ConnectionActor(CtiRequires ctiRequires, EventLoopGroup loopGroup,
+                           String ipAddress, int port, String clientName,
+                           List<CallStatusListener> callStatusListeners) {
         this.ctiRequires = ctiRequires;
         this.loopGroup = loopGroup;
         this.ipAddress = ipAddress;
         this.port = port;
         this.clientName = clientName;
+        this.callStatusListeners = callStatusListeners;
     }
 
     @SuppressWarnings("CodeBlock2Expr")
     public static Props props(CtiRequires ctiRequires, EventLoopGroup loopGroup, String ipAddress, int port, String clientName) {
+        List<CallStatusListener> callStatusListeners = new ArrayList<>();
         return Props.create(ConnectionActor.class, () -> {
-            return new ConnectionActor(ctiRequires, loopGroup, ipAddress, port, clientName);
+            return new ConnectionActor(ctiRequires, loopGroup, ipAddress, port, clientName, callStatusListeners);
         });
     }
 
@@ -49,14 +55,14 @@ public class ConnectionActor extends AbstractActorWithStash implements NettyChan
 
         @SuppressWarnings("CodeBlock2Expr")
         public Receive createReceive() {
-            return receiveBuilder()
+            return listenerReceiver().orElse(receiveBuilder()
                     .match(NettyChannel.class, this::onConnected)
                     .match(Throwable.class, this::onFailed)
                     .match(messageNewCall.class, messageNewCall -> {
                         stash();
                     })
                     .matchAny(r -> System.out.println("unexpected message : " + r))
-                    .build();
+                    .build());
         }
 
         private void onConnected(NettyChannel nettyChannel) {
@@ -68,6 +74,16 @@ public class ConnectionActor extends AbstractActorWithStash implements NettyChan
 
         private void onFailed(Throwable throwable) {
         }
+    }
+
+    public Receive listenerReceiver() {
+        return receiveBuilder()
+                .match(CallStatusListener.class, this::onListener)
+                .build();
+    }
+
+    private void onListener(CallStatusListener listener) {
+        callStatusListeners.add(listener);
     }
 
     @Override
@@ -126,11 +142,11 @@ public class ConnectionActor extends AbstractActorWithStash implements NettyChan
         }
 
         public Receive createReceive() {
-            return receiveBuilder()
+            return listenerReceiver().orElse(receiveBuilder()
                     .match(LoginResp.class, this::onLoginResp)
                     .match(messageDisconnected.class, this::onMessageDisconnected)
                     .matchAny(r -> stash())
-                    .build();
+                    .build());
         }
 
         //TODO Interval 필요
@@ -153,11 +169,16 @@ public class ConnectionActor extends AbstractActorWithStash implements NettyChan
         }
 
         public Receive createReceive() {
-            return receiveBuilder()
+            return listenerReceiver().orElse(receiveBuilder()
                     .match(messageNewCall.class, this::onMessageNewCall)
                     .match(messageDisconnected.class, this::onMessageDisconnected)
+                    .match(CallStatus.class, this::onCallStatus)
                     .matchAny(r -> log.info("AT Normal State unexpected message : {} " , r))
-                    .build();
+                    .build());
+        }
+
+        private void onCallStatus(CallStatus callStatus) {
+            callStatusListeners.forEach(listener -> listener.HandleCallStatus(callStatus.getCallID(), callStatus.getEvent()));
         }
 
         private void onMessageDisconnected(messageDisconnected req) {
