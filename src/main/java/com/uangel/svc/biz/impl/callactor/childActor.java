@@ -2,6 +2,7 @@ package com.uangel.svc.biz.impl.callactor;
 
 import akka.actor.AbstractActorWithStash;
 import akka.actor.Props;
+import com.uangel.svc.biz.call.InboundCallResp;
 
 public class childActor extends AbstractActorWithStash {
     private CallManagerRequires requires;
@@ -25,5 +26,6 @@ public class childActor extends AbstractActorWithStash {
 
     private void onInboundCall(messageInboundCall msg) {
         requires.ctiClient.NewCall(msg.calledNum, callID);
+        msg.sendResponse(sender(), new InboundCallResp(), self());
     }
 }
