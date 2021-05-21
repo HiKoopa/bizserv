@@ -30,7 +30,7 @@ class UnmarshallerStack extends DefaultHandler  {
     Attributes elemAttributes;
 
     public void startElement(String uri, String localName, String qName, Attributes attributes) {
-        //log.info("start element {}", qName);
+        log.info("start element {}", qName);
         elemAttributes = attributes;
         handler.getFirst().handler.elem(qName, attributes);
     }
@@ -46,13 +46,17 @@ class UnmarshallerStack extends DefaultHandler  {
     public void endDocument() {
         //log.info("end document ");
 
-        var h = handler.removeFirst();
-        h.whenPop.run();
+        if (handler.size() > 0 ) {
+            var h = handler.removeFirst();
+            h.whenPop.run();
+        }
     }
 
     @Override
     public void characters(char[] ch, int start, int length) {
-        handler.getFirst().handler.text(new String(ch, start, length));
+        var t = new String(ch, start, length);
+       // log.info("text = {}", t);
+        handler.getFirst().handler.text(t);
     }
 
     <T> void become(Unmarshaller<T> h , Consumer<Unmarshaller<T>> consumer) {

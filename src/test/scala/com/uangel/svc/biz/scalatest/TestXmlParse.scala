@@ -157,4 +157,16 @@ class TestXmlParse extends AnyFunSuite {
     assert(newcall.getEvent == nc.getEvent)
     assert(newcall.getCallID == nc.getCallID)
   }
+
+  test("parse new call") {
+    val xml =
+      """<?xml version="1.0" encoding="ISO-8859-1"?><!DOCTYPE GctiMsg SYSTEM 'IServer.dtd'><GctiMsg><CallId>hello</CallId><NewCall CallControlMode="Network" Version="4.0"><CalledNum>10005</CalledNum></NewCall></GctiMsg>""".stripMargin
+
+
+    var parser = new CtiMessageParser()
+
+    var parsed = parser.parse( xml.getBytes)
+
+    assert(parsed.isSuccess)
+  }
 }

@@ -1,7 +1,9 @@
 package com.uangel.svc.biz.impl.ctimessage;
 
+import lombok.extern.slf4j.Slf4j;
 import org.xml.sax.Attributes;
 
+@Slf4j
 public class NewCall extends HasCallID {
 
     String calledNum;
@@ -37,6 +39,7 @@ public class NewCall extends HasCallID {
     static public Unmarshaller<String> CalledNumParser() {
         return new Unmarshaller<>() {
             void text(String txt) {
+                log.info("called num success {}", txt);
                 success(txt.trim());
             }
         };

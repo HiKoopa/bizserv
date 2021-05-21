@@ -73,6 +73,7 @@ public class ConnectionActor extends AbstractActorWithStash implements NettyChan
         }
 
         private void onFailed(Throwable throwable) {
+            preStart();
         }
     }
 

@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 public class CtiMessageParser {
     SAXParserFactory factory = SAXParserFactory.newInstance();
@@ -48,20 +49,20 @@ public class CtiMessageParser {
         });
     }
 
-    static Map<String, MessageUnmarshaller> messageParser = new HashMap<>();
-    static void addUnmarshaller( String messageType , MessageUnmarshaller unmarshaller) {
+    static Map<String, Supplier<MessageUnmarshaller>> messageParser = new HashMap<>();
+    static void addUnmarshaller( String messageType , Supplier<MessageUnmarshaller> unmarshaller) {
         messageParser.put(messageType, unmarshaller);
     }
 
     static Optional<MessageUnmarshaller> getUnmarshaller(String messageType) {
-        return Optional.ofNullable(messageParser.get(messageType));
+        return Optional.ofNullable(messageParser.get(messageType)).map(Supplier::get);
     }
 
     static {
-        messageParser.put("LoginResp", LoginResp.Unmarshaller());
-        messageParser.put("LoginReq", LoginReq.Unmarshaller());
-        messageParser.put("CallStatus", CallStatus.Unmarshaller());
-        messageParser.put("NewCall", NewCall.Unmarshaller());
+        messageParser.put("LoginResp", LoginResp::Unmarshaller);
+        messageParser.put("LoginReq", LoginReq::Unmarshaller);
+        messageParser.put("CallStatus", CallStatus::Unmarshaller);
+        messageParser.put("NewCall", NewCall::Unmarshaller);
     }
 }
 
