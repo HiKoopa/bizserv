@@ -7,7 +7,8 @@ import org.springframework.context.annotation.Lazy;
 
 @Configuration
 public class ActorSystemModule {
-    @Bean
+
+    @Bean(destroyMethod = "terminate")
     @Lazy
     public ActorSystem actorSystem() {
         return ActorSystem.create();

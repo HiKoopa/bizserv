@@ -1,6 +1,6 @@
 package com.uangel.svc.biz.impl.ctimessage;
 
-import com.uangel.svc.biz.actorutil.Try;
+import com.uangel.svc.biz.functional.Try;
 
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamWriter;

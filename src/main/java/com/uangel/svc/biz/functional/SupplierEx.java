@@ -1,4 +1,4 @@
-package com.uangel.svc.biz.actorutil;
+package com.uangel.svc.biz.functional;
 
 @FunctionalInterface
 public interface SupplierEx<T> {

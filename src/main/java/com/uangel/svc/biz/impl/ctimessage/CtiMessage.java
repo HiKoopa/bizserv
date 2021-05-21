@@ -1,7 +1,6 @@
 package com.uangel.svc.biz.impl.ctimessage;
 
-import com.uangel.svc.biz.actorutil.Try;
-import org.xml.sax.Attributes;
+import com.uangel.svc.biz.functional.Try;
 
 public interface CtiMessage {
     String messageType();
