@@ -3,6 +3,7 @@ package com.uangel.svc.biz.impl.ctinetty;
 import akka.actor.AbstractActorWithStash;
 import akka.actor.ActorRef;
 import akka.actor.Props;
+import com.uangel.svc.biz.actor.AbstractActorWithStashWithTimer;
 import com.uangel.svc.biz.actorutil.ResponseType;
 import com.uangel.svc.biz.cti.CallStatusListener;
 import com.uangel.svc.biz.impl.ctimessage.*;
@@ -13,7 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
-public class ConnectionActor extends AbstractActorWithStash implements NettyChannelStatusListener, CtiMessageHandler {
+public class ConnectionActor extends AbstractActorWithStashWithTimer implements NettyChannelStatusListener, CtiMessageHandler {
 
     private CtiRequires ctiRequires;
     private EventLoopGroup loopGroup;
