@@ -1,6 +1,7 @@
 package com.uangel.svc.biz.impl.ctimessage;
 
 import com.uangel.svc.biz.actorutil.Try;
+import lombok.extern.slf4j.Slf4j;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -9,7 +10,13 @@ import java.text.ParseException;
 import java.util.LinkedList;
 import java.util.function.Consumer;
 
+@Slf4j
 class UnmarshallerStack extends DefaultHandler  {
+
+    public UnmarshallerStack(Unmarshaller<?> rootUnmarshaller) {
+        become(rootUnmarshaller, unmarshaller -> {});
+    }
+
     static class HandlerStack {
         Unmarshaller<?> handler;
         Runnable whenPop;
@@ -25,18 +32,22 @@ class UnmarshallerStack extends DefaultHandler  {
     Attributes elemAttributes;
 
     public void startElement(String uri, String localName, String qName, Attributes attributes) {
+        //log.info("start element {}", qName);
         elemAttributes = attributes;
         handler.getFirst().handler.elem(qName, attributes);
     }
 
     @Override
     public void endElement(String uri, String localName, String qName) {
+        //log.info("end element {}", qName);
         var h = handler.removeFirst();
         h.whenPop.run();
     }
 
     @Override
     public void endDocument() {
+        //log.info("end document ");
+
         var h = handler.removeFirst();
         h.whenPop.run();
     }
@@ -47,6 +58,7 @@ class UnmarshallerStack extends DefaultHandler  {
     }
 
     <T> void become(Unmarshaller<T> h , Consumer<Unmarshaller<T>> consumer) {
+        //log.info("become {}", h.getClass());
         h.setStack(this);
         handler.addFirst(new HandlerStack( h, () -> {
             consumer.accept(h);
